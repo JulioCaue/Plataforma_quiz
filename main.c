@@ -10,22 +10,26 @@ cJSON* ler_arquivo(){
     if (arquivo == NULL){
         printf("Erro: Não foi possivel abrir o arquivo\n");
         return NULL;
-
+    }
     //transformar o conteudo do arquivo em uma string
-    char buffer[1024];
-    int len = fread(buffer,1,sizeof(buffer),arquivo);
+    fseek(arquivo,0,SEEK_END);
+    long tamanho = ftell(arquivo);
+    rewind(arquivo);
+
+    char *buffer = malloc(tamanho + 1);
+    int len = fread(buffer,1,tamanho,arquivo);
+    buffer[len]='\0';
 
     //parsear a data do arquivo json 
     cJSON *json_parseado = cJSON_Parse(buffer);
+    fclose(arquivo);
     if (json_parseado == NULL){
         const char *error_ptr = cJSON_GetErrorPtr();
         if (error_ptr != NULL){
             printf("Erro: %s\n", error_ptr);
-            }
-        }   
-    
-    return json_parseado;
+        }
     }
+    return json_parseado;
 }
 
 //função responsavel pelo menu do programa
@@ -103,26 +107,24 @@ int logica_pergunta(int id_pergunta, cJSON* json_parseado){
 
     cJSON *resposta_correta = cJSON_GetObjectItem (data_pergunta,"resposta_correta");
     
-    int i = 0;
+    int i = 1;
     cJSON *resposta = NULL;
-    printf("Pergunta: %s\n\n",pergunta);
+    printf("Pergunta: %s\n\n",pergunta -> valuestring);
     cJSON_ArrayForEach(resposta,respostas){
         if (cJSON_IsString(resposta)){
-            printf("Opção %d: %s\n", i++, resposta->valuestring);
+            printf("Opção %d: %s\n", i++, resposta -> valuestring);
         }
     }
-
     return (resposta_correta->valueint);
-
 }
 
 
 //função principal do programa
 void main(){
+    int resposta_correta;
     int pontuação_jogador = 0;
     int perguntas_acertadas = 0;
     int id_pergunta = 0;
-    int total_perguntas = 10;
     char resposta_jogador[100];
     system("cls");
     //faz terminal usar utf-8
@@ -135,44 +137,56 @@ void main(){
         printf("Erro: falha ao carregar dados\n");
         getchar();
     }
-    int resposta_correta = json_parseado->valueint;
+    int total_perguntas = cJSON_GetArraySize(json_parseado);
 
     if (menu_programa()==1){
         // entrei no jogo
 
-        for (int i = 0; i < total_perguntas; i++){
+        for (int i = 0; i < total_perguntas; ++i){
             //chamada da função do jogo fica aqui
             resposta_correta = (logica_pergunta(id_pergunta, json_parseado));
+            resposta_correta++;
             scanf(" %s",&resposta_jogador);
 
             int resposta_jogador_int = atoi(resposta_jogador);
-            if (resposta_jogador[0] != '\0'){
-                if (resposta_jogador_int == resposta_correta){
+            int resposta_valida=1;
+            for (int j = 0; resposta_jogador[j] != '\0'; j++){
+                if (resposta_jogador[j] <= '0' || resposta_jogador[j] > '9'){
+                    resposta_valida = 0;
+                    break;
+                }
+            }
+
+            if (resposta_jogador[0] != '\0' && resposta_jogador[0] != '\n'){
+                if ((resposta_jogador_int) == resposta_correta && resposta_valida){
                     pontuação_jogador++;
                     perguntas_acertadas++;
-                    id_pergunta++;
-                    printf("Resposta correta! Pontuação atual: %d",pontuação_jogador);
+                    system("cls");
+                    printf("Certa Resposta!\nPontuação atual: %d\n",pontuação_jogador);
+                    getchar();
                 }
 
                 else{
-                    pontuação_jogador--;
-                    printf("Resposta errada!");
-                    resposta_correta++;
-                    printf("Resposta correta era a numero %d",resposta_correta);
+                    if (pontuação_jogador>0){pontuação_jogador--;}
+                    id_pergunta++;
+                    system("cls");
+                    printf("Resposta errada!\n");
+                    printf("Opção correta era a opção numero %d!\n\n",--resposta_correta);
+                    getchar();
                 }
+
+                id_pergunta++;
             }
             else{
                 printf("Erro: mensagem_correta está nula.");
+                break;
             }
-
-            // placeholder para pegar pergunta aqui:
-            // getchar()
         }
 
-        printf("Fim de jogo!");
-        printf("Pontuação final: %d",pontuação_jogador);
-        printf("Você acertou %d/%d perguntas!",perguntas_acertadas,total_perguntas);
+        system("cls");
+        printf("Fim de jogo!\n");
+        printf("Pontuação final: %d\n",pontuação_jogador);
+        printf("Você acertou %d/%d perguntas!\n",perguntas_acertadas,total_perguntas);
     }
-
     cJSON_Delete(json_parseado);
 }
