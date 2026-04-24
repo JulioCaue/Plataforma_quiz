@@ -1,0 +1,32 @@
+=== EXPLICAÇÃO DO JOGO===
+
+1: No menu principal, escolha uma das opções:
+   1 - Iniciar o jogo
+   2 - Ver as regras
+   3 - Sair
+"1" inicia o jogo, "2" vem para essa tela, "3" fecha o jogo. Outros inputs são desconsiderados.
+
+2: O jogo consiste em uma sequência de perguntas de múltipla escolha.
+   - Cada pergunta possui 4 alternativas, numeradas de 1 a 4.
+   - Para responder, digite o número correspondente à alternativa desejada.
+   - Letras, palavras, símbolos ou outros números não podem ser usados. Apenas o numero da alternativa correta é considerado como resposta certa.
+
+3: Sistema de pontuação:
+   - Resposta correta: +1 ponto
+   - Resposta incorreta: -1 ponto (a pontuação nunca fica negativa)
+
+4: Sistema de tentativas:
+   - O jogador começa com 3 tentativas
+   - Cada erro consome 1 tentativa
+   - Ao zerar as tentativas, o jogo termina imediatamente
+
+5: Progressão:
+   - As perguntas são apresentadas em sequência
+   - O jogo termina quando todas as perguntas forem respondidas ou quando as tentativas acabarem
+
+6: Ao final, será exibido:
+   - Pontuação final
+   - Número de acertos
+   - Total de perguntas
+
+Boa sorte!

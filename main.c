@@ -4,17 +4,50 @@
 #include <stdlib.h>
 #include "bibliotecas_locais/cJSON.h"
 
-//função responsavel pelo menu do programa
-//define variaveis e textos que são usados no menu
+char* pegar_nome(){
+    char *nome_usuario = malloc(50 * sizeof(char));
+    nome_usuario[0] = '\0'; // inicializa o buffer vazio
+
+    while (nome_usuario[0] == '\0'){ // loop enquanto nome estiver vazio
+        printf("Por favor digite seu nome.\n");
+        if (fgets(nome_usuario, 50, stdin) != NULL){
+            nome_usuario[strcspn(nome_usuario, "\n")] = '\0';
+        }
+        else{
+            printf("Nome não pode estar vazio.\n");
+            nome_usuario[0] = '\0'; // reseta para continuar o loop
+        }
+    }
+    return nome_usuario;
+}
+
+//responsavel por ler o arquivo com texto de ajuda e printar ele.
+void texto_explicação(){
+    FILE *arquivo = fopen("ajuda.txt","r");
+    if (arquivo == NULL){
+        printf("Erro: Não foi possivel abrir o arquivo\n");
+        return;
+    }
+    fseek(arquivo, 0, SEEK_END);
+    long tamanho = ftell(arquivo);
+    rewind(arquivo);
+
+    char *buffer = malloc(tamanho + 1);
+    int len = fread(buffer, 1, tamanho, arquivo);
+    buffer[len] = '\0';
+
+    printf("%s", buffer);
+
+    free(buffer);
+    fclose(arquivo);
+}
+
+//função responsavel pelo menu do programa.
+//define variaveis e textos que são usados no menu,
 //além da logica do submenu de ajuda
-int menu_programa(){
-    char nome_usuario[30]="sem_nome_usuario";
+int menu_programa(char *nome_usuario){
     char escolha_menu[5];
     int olhando_menu=1;
-    const char *texto_explicação =(
-    "\n=======EXPLICAÇÃO DO JOGO=======\n"
-    "texto placeholder\n"
-    "================================\n\n");
 
     const char *texto_menu_principal=(
     "Olá, %s!"
@@ -24,17 +57,6 @@ int menu_programa(){
     "3. Sair\n\n"
     "Escolha uma das opções do menu: \0");
 
-    while (strcmp(nome_usuario,"sem_nome_usuario")==0){
-        printf("Por favor digite seu nome.\n\0");
-        if (fgets (nome_usuario, sizeof(nome_usuario), stdin) != NULL){
-            nome_usuario [strcspn(nome_usuario, "\n")] = '\0';
-        }
-
-        else{
-            printf("Nome não pode estar vazio.\n\0");
-        }
-    }
-
     system("cls");
 
     printf(texto_menu_principal,nome_usuario);
@@ -42,7 +64,7 @@ int menu_programa(){
         escolha_menu[strcspn(escolha_menu,"\n")]='\0';
     }
 
-    while (olhando_menu==1){
+    while (1){
         if (strcspn(escolha_menu,"1")==0){
             system("cls");
             olhando_menu=0;
@@ -50,17 +72,17 @@ int menu_programa(){
         }
         else if (strcspn(escolha_menu,"2")==0){
             system("cls");
-            printf(texto_explicação);
-            printf("aperte qualquer botão para sair. ");
+            texto_explicação();
+            printf("\naperte qualquer botão para sair. ");
             getchar();
             system("cls");
-            printf(texto_menu_principal);
+            printf(texto_menu_principal,nome_usuario);
             if (fgets (escolha_menu, sizeof(escolha_menu),stdin) != NULL){
                 escolha_menu[strcspn(escolha_menu,"\n")]='\0';
-    }
+            }
         }
         else if (strcspn(escolha_menu,"3")==0){
-            olhando_menu=0;
+            return 3;
         }
         else{
             system("cls");
@@ -82,7 +104,7 @@ cJSON* ler_arquivo(){
         printf("Erro: Não foi possivel abrir o arquivo\n");
         return NULL;
     }
-    //transformar o conteudo do arquivo em uma string
+    //Ler tamanho do arquivo em uma string
     fseek(arquivo,0,SEEK_END);
     long tamanho = ftell(arquivo);
     rewind(arquivo);
@@ -140,10 +162,17 @@ void main(){
     }
     //Pega quantidade de perguntas para que o loop entre as quetões funcione
     int total_perguntas = cJSON_GetArraySize(json_parseado);
+
+    char *nome_usuario=pegar_nome();
     
     //Loop principal do programa, roda infinitamente até que usuario escolha sair
     while (1){
-        if (menu_programa()==1){
+        int escolha = menu_programa(nome_usuario);
+
+        if (escolha==3){
+            break;
+        }
+        else if (escolha==1){
             //definição de variaveis padrão para o jogo
             int resposta_correta;
             int pontuação_jogador = 0;
@@ -160,6 +189,7 @@ void main(){
                 resposta_correta = (logica_pergunta(id_pergunta, json_parseado));
                 resposta_correta++;
                 scanf(" %s",&resposta_jogador);
+                while(getchar() != '\n'); 
 
                 //transforma resposta do jogador (str) em um int
                 int resposta_jogador_int = atoi(resposta_jogador);
@@ -204,14 +234,14 @@ void main(){
                     break;
                 }
             }
-            
-        //Mensagem de fim de jogo, retorna ao menu após qualquer aperto de tecla
-        system("cls");
-        printf("Fim de jogo!\n");
-        printf("Pontuação final: %d\n",pontuação_jogador);
-        printf("Você acertou %d/%d perguntas!\n",perguntas_acertadas,total_perguntas);
-        getchar();
-        }
+            //Mensagem de fim de jogo, retorna ao menu após qualquer aperto de tecla
+            system("cls");
+            printf("Fim de jogo!\n");
+            printf("Pontuação final: %d\n",pontuação_jogador);
+            printf("Você acertou %d/%d perguntas!\n",perguntas_acertadas,total_perguntas);
+            getchar();
+        }  
+
     }
     //deleta json_parseado da memoria quando usuario sair
     cJSON_Delete(json_parseado);
